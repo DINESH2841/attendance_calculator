@@ -1,0 +1,236 @@
+<html><head><base href="https://websim.example.com/advanced-attendance-tracker/">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced Attendance Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+    
+    body {
+        font-family: 'Poppins', sans-serif;
+        background: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        color: #333;
+    }
+    .container {
+        background-color: rgba(255, 255, 255, 0.95);
+        padding: 2.5rem;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        max-width: 800px;
+        width: 90%;
+    }
+    h1 {
+        color: #4a47a3;
+        margin-bottom: 1.5rem;
+        font-size: 2.5rem;
+        font-weight: 700;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+    .input-group {
+        margin-bottom: 1.5rem;
+        text-align: left;
+    }
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #4a47a3;
+    }
+    input {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid #a1c4fd;
+        border-radius: 10px;
+        font-size: 1rem;
+        transition: all 0.3s;
+        background-color: #f0f8ff;
+    }
+    input:focus {
+        border-color: #4a47a3;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(74, 71, 163, 0.2);
+    }
+    button {
+        background-color: #4a47a3;
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        margin-top: 1rem;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 1.1rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    button:hover {
+        background-color: #5d5fef;
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+    button:active {
+        transform: translateY(-1px);
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+    }
+    #result {
+        margin-top: 2rem;
+        font-weight: 400;
+        padding: 1.5rem;
+        border-radius: 10px;
+        transition: all 0.3s;
+        background-color: #f0f8ff;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    .chart-container {
+        position: relative;
+        margin: auto;
+        height: 300px;
+        width: 300px;
+        margin-top: 2rem;
+    }
+    .highlight {
+        font-weight: 700;
+        color: #4a47a3;
+    }
+    .flex-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-top: 2rem;
+    }
+    .info-container {
+        flex: 1;
+        margin-right: 2rem;
+    }
+    .chart-wrapper {
+        flex: 1;
+    }
+    @media (max-width: 768px) {
+        .flex-container {
+            flex-direction: column;
+        }
+        .info-container {
+            margin-right: 0;
+            margin-bottom: 2rem;
+        }
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>Smart Attendance Analyzer</h1>
+    <div class="input-group">
+        <label for="totalClasses">Total number of classes:</label>
+        <input type="number" id="totalClasses" min="1" required>
+    </div>
+    <div class="input-group">
+        <label for="attendedClasses">Number of classes attended:</label>
+        <input type="number" id="attendedClasses" min="0" required>
+    </div>
+    <button onclick="calculateAttendance()">Analyze Attendance</button>
+    <div class="flex-container">
+        <div class="info-container">
+            <div id="result"></div>
+        </div>
+        <div class="chart-wrapper">
+            <div class="chart-container">
+                <canvas id="attendanceChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let myChart;
+
+function calculateAttendance() {
+    const totalClasses = parseInt(document.getElementById('totalClasses').value);
+    const attendedClasses = parseInt(document.getElementById('attendedClasses').value);
+    const resultDiv = document.getElementById('result');
+
+    if (isNaN(totalClasses) || isNaN(attendedClasses) || totalClasses <= 0 || attendedClasses < 0 || attendedClasses > totalClasses) {
+        resultDiv.innerHTML = "<p class='highlight'>Please enter valid numbers.</p>";
+        return;
+    }
+
+    const currentPercentage = (attendedClasses / totalClasses) * 100;
+    const requiredPercentage = 80;
+
+    if (currentPercentage >= requiredPercentage) {
+        const allowedAbsences = Math.floor(totalClasses * 0.2);
+        const remainingAbsences = allowedAbsences - (totalClasses - attendedClasses);
+        resultDiv.innerHTML = `
+            <p>Congratulations! Your current attendance is <span class="highlight">${currentPercentage.toFixed(2)}%</span>.</p>
+            <p>You're maintaining excellent attendance!</p>
+            <p>You can afford to miss up to <span class="highlight">${remainingAbsences}</span> more classes while still keeping your attendance above 80%.</p>
+            <p>Keep up the great work!</p>
+        `;
+    } else {
+        const classesNeeded = Math.ceil((requiredPercentage / 100 * totalClasses) - attendedClasses);
+        resultDiv.innerHTML = `
+            <p>Your current attendance is <span class="highlight">${currentPercentage.toFixed(2)}%</span>.</p>
+            <p>To reach the 80% attendance target, you need to attend <span class="highlight">${classesNeeded}</span> more classes.</p>
+            <p>Stay motivated and improve your attendance!</p>
+        `;
+    }
+
+    updateChart(attendedClasses, totalClasses - attendedClasses);
+}
+
+function updateChart(attended, missed) {
+    const ctx = document.getElementById('attendanceChart').getContext('2d');
+    
+    if (myChart) {
+        myChart.destroy();
+    }
+    
+    myChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['Attended', 'Missed'],
+            datasets: [{
+                data: [attended, missed],
+                backgroundColor: [
+                    'rgba(75, 192, 192, 0.8)',
+                    'rgba(255, 99, 132, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(255, 99, 132, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                title: {
+                    display: true,
+                    text: 'Attendance Overview',
+                    font: {
+                        size: 18,
+                        weight: 'bold'
+                    }
+                }
+            },
+            animation: {
+                animateScale: true,
+                animateRotate: true
+            }
+        }
+    });
+}
+</script>
+</body>
+</html>
